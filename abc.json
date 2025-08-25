@@ -1,0 +1,14 @@
+{
+  "extraction_date": "2025-08-25T10:30:00Z",
+  "data_source": "https://www.amfiindia.com/spages/NAVAll.txt",
+  "schemes": [
+    {
+      "scheme_name": "Aditya Birla Sun Life Banking & PSU Debt Fund - DIRECT - IDCW",
+      "asset_value": 108.2153
+    },
+    {
+      "scheme_name": "Axis Banking & PSU Debt Fund - Direct Plan - Growth Option",
+      "asset_value": 2743.7004
+    }
+  ]
+}

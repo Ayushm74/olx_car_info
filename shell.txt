@@ -1,0 +1,49 @@
+#!/bin/bash
+
+URL="https://www.amfiindia.com/spages/NAVAll.txt"
+OUTPUT_FILE="amfi_nav_data.json"
+TEMP_FILE="nav_temp.txt"
+
+echo "Downloading AMFI NAV data..."
+curl -s "$URL" -o "$TEMP_FILE"
+
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to download data from $URL"
+    exit 1
+fi
+
+if [ ! -f "$TEMP_FILE" ]; then
+    echo "Error: Failed to create temporary file"
+    exit 1
+fi
+
+echo '{"extraction_date":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","data_source":"'$URL'","schemes":[' > "$OUTPUT_FILE"
+
+FIRST_RECORD=true
+grep -v "^$" "$TEMP_FILE" | \
+grep -v "^Scheme Code" | \
+grep -v "^Open Ended Schemes" | \
+grep -v "^[[:space:]]*$" | \
+grep -v "^[A-Za-z].*Fund$" | \
+awk -F';' -v first_record="$FIRST_RECORD" '
+{
+    if (NF < 5) next
+    if ($4 == "" || $4 ~ /^[A-Za-z ]*Fund$/ || $4 ~ /^[A-Za-z ]*Mutual Fund$/) next
+    if ($5 == "" || $5 !~ /^[0-9]+\.?[0-9]*$/) next
+    
+    gsub(/^[ \t]+|[ \t]+$/, "", $4)
+    gsub(/[ \t]+/, " ", $4)
+    gsub(/"/, "\\\"", $4)
+    
+    if (NR > 1) print ","
+    printf "{\"scheme_name\":\"%s\",\"asset_value\":%s}", $4, $5
+}' >> "$OUTPUT_FILE"
+
+echo ']}' >> "$OUTPUT_FILE"
+
+rm -f "$TEMP_FILE"
+
+echo "Data extraction completed!"
+echo "Output saved to: $OUTPUT_FILE"
+SCHEME_COUNT=$(jq '.schemes | length' "$OUTPUT_FILE" 2>/dev/null || echo "N/A")
+echo "Number of schemes extracted: $SCHEME_COUNT"
